@@ -17,6 +17,9 @@ impl_op! {
         for Neon(a: int64x2_t, b: int64x2_t) -> int64x2_t {
             vaddq_s64(a, b)
         }
+        for Wasm(a: v128, b: v128) -> v128 {
+            i64x2_add(a, b)
+        }
     }
 }
 
@@ -37,14 +40,17 @@ impl_op! {
         for Neon(a: int64x2_t, b: int64x2_t) -> int64x2_t {
             vsubq_s64(a, b)
         }
+        for Wasm(a: v128, b: v128) -> v128 {
+            i64x2_sub(a, b)
+        }
     }
 }
 
 impl_op! {
     fn mul<i64> {
         for Avx2(a: __m256i, b: __m256i) -> __m256i {
-            let a_arr = core::mem::transmute::<_, [i64; 4]>(a);
-            let b_arr = core::mem::transmute::<_, [i64; 4]>(b);
+            let a_arr = core::mem::transmute::<__m256i, [i64; 4]>(a);
+            let b_arr = core::mem::transmute::<__m256i, [i64; 4]>(b);
             let c_arr = [
                 a_arr[0].wrapping_mul(b_arr[0]),
                 a_arr[1].wrapping_mul(b_arr[1]),
@@ -54,8 +60,8 @@ impl_op! {
             core::mem::transmute::<_, __m256i>(c_arr)
         }
         for Sse41(a: __m128i, b: __m128i) -> __m128i {
-            let a_arr = core::mem::transmute::<_, [i64; 2]>(a);
-            let b_arr = core::mem::transmute::<_, [i64; 2]>(b);
+            let a_arr = core::mem::transmute::<__m128i, [i64; 2]>(a);
+            let b_arr = core::mem::transmute::<__m128i, [i64; 2]>(b);
             let c_arr = [
                 a_arr[0].wrapping_mul(b_arr[0]),
                 a_arr[1].wrapping_mul(b_arr[1]),
@@ -63,8 +69,8 @@ impl_op! {
             core::mem::transmute::<_, __m128i>(c_arr)
         }
         for Sse2(a: __m128i, b: __m128i) -> __m128i {
-            let a_arr = core::mem::transmute::<_, [i64; 2]>(a);
-            let b_arr = core::mem::transmute::<_, [i64; 2]>(b);
+            let a_arr = core::mem::transmute::<__m128i, [i64; 2]>(a);
+            let b_arr = core::mem::transmute::<__m128i, [i64; 2]>(b);
             let c_arr = [
                 a_arr[0].wrapping_mul(b_arr[0]),
                 a_arr[1].wrapping_mul(b_arr[1]),
@@ -75,13 +81,16 @@ impl_op! {
             a.wrapping_mul(b)
         }
         for Neon(a: int64x2_t, b: int64x2_t) -> int64x2_t {
-            let a_arr = core::mem::transmute::<_, [i64; 2]>(a);
-            let b_arr = core::mem::transmute::<_, [i64; 2]>(b);
+            let a_arr = core::mem::transmute::<int64x2_t, [i64; 2]>(a);
+            let b_arr = core::mem::transmute::<int64x2_t, [i64; 2]>(b);
             let c_arr = [
                 a_arr[0].wrapping_mul(b_arr[0]),
                 a_arr[1].wrapping_mul(b_arr[1]),
             ];
             core::mem::transmute::<_, int64x2_t>(c_arr)
+        }
+        for Wasm(a: v128, b: v128) -> v128 {
+            i64x2_mul(a, b)
         }
     }
 }
@@ -108,6 +117,10 @@ impl_op! {
             let not_mask = vreinterpretq_s64_s32(vmvnq_s32(vreinterpretq_s32_s64(mask)));
             vorrq_s64(vandq_s64(mask, b), vandq_s64(not_mask, a))
         }
+        for Wasm(a: v128, b: v128) -> v128 {
+            let mask = i64x2_gt(a, b);
+            v128_or(v128_and(mask, b), v128_andnot(a, mask))
+        }
     }
 }
 
@@ -133,6 +146,10 @@ impl_op! {
             let not_mask = vreinterpretq_s64_s32(vmvnq_s32(vreinterpretq_s32_s64(mask)));
             vorrq_s64(vandq_s64(mask, a), vandq_s64(not_mask, b))
         }
+        for Wasm(a: v128, b: v128) -> v128 {
+            let mask = i64x2_gt(a, b);
+            v128_or(v128_and(mask, a), v128_andnot(b, mask))
+        }
     }
 }
 
@@ -155,6 +172,9 @@ impl_op! {
         }
         for Neon(a: int64x2_t) -> int64x2_t {
             vabsq_s64(a)
+        }
+        for Wasm(a: v128) -> v128 {
+            i64x2_abs(a)
         }
     }
 }
@@ -179,6 +199,9 @@ impl_op! {
         }
         for Neon(a: int64x2_t, b: int64x2_t) -> int64x2_t {
             vreinterpretq_s64_u64(vceqq_s64(a, b))
+        }
+        for Wasm(a: v128, b: v128) -> v128 {
+            i64x2_eq(a, b)
         }
     }
 }
@@ -206,6 +229,9 @@ impl_op! {
         }
         for Neon(a: int64x2_t, b: int64x2_t) -> int64x2_t {
             vreinterpretq_s64_u32(vmvnq_u32(vreinterpretq_u32_u64(vceqq_s64(a, b))))
+        }
+        for Wasm(a: v128, b: v128) -> v128 {
+            i64x2_ne(a, b)
         }
     }
 }
@@ -237,6 +263,9 @@ impl_op! {
         for Neon(a: int64x2_t, b: int64x2_t) -> int64x2_t {
             vreinterpretq_s64_u64(vcltq_s64(a, b))
         }
+        for Wasm(a: v128, b: v128) -> v128 {
+            i64x2_lt(a, b)
+        }
     }
 }
 
@@ -264,6 +293,9 @@ impl_op! {
         for Neon(a: int64x2_t, b: int64x2_t) -> int64x2_t {
             vreinterpretq_s64_u64(vcleq_s64(a, b))
         }
+        for Wasm(a: v128, b: v128) -> v128 {
+            i64x2_le(a, b)
+        }
     }
 }
 
@@ -287,6 +319,9 @@ impl_op! {
         }
         for Neon(a: int64x2_t, b: int64x2_t) -> int64x2_t {
             vreinterpretq_s64_u64(vcgtq_s64(a, b))
+        }
+        for Wasm(a: v128, b: v128) -> v128 {
+            i64x2_gt(a, b)
         }
     }
 }
@@ -318,6 +353,9 @@ impl_op! {
         for Neon(a: int64x2_t, b: int64x2_t) -> int64x2_t {
             vreinterpretq_s64_u64(vcgeq_s64(a, b))
         }
+        for Wasm(a: v128, b: v128) -> v128 {
+            i64x2_ge(a, b)
+        }
     }
 }
 
@@ -342,6 +380,9 @@ impl_op! {
         for Neon(a: int64x2_t, b: int64x2_t, mask: int64x2_t) -> int64x2_t {
             vbslq_s64(vreinterpretq_u64_s64(mask), b, a)
         }
+        for Wasm(a: v128, b: v128, mask: v128) -> v128 {
+            v128_or(v128_and(mask, b), v128_andnot(a, mask))
+        }
     }
 }
 
@@ -362,6 +403,9 @@ impl_op! {
         for Neon(a: int64x2_t, rhs: i32) -> int64x2_t {
             let rhs = Self::set1(rhs as i64);
             vshlq_s64(a, rhs)
+        }
+        for Wasm(a: v128, rhs: i32) -> v128 {
+            i64x2_shl(a, rhs as u32)
         }
     }
 }
@@ -384,6 +428,9 @@ impl_op! {
             let rhs = Self::set1(-rhs as i64);
             vreinterpretq_s64_u64(vshlq_u64(vreinterpretq_u64_s64(a), rhs))
         }
+        for Wasm(a: v128, rhs: i32) -> v128 {
+            u64x2_shr(a, rhs as u32)
+        }
     }
 }
 
@@ -403,6 +450,9 @@ impl_imm8_op! {
         }
         for Neon(a: int64x2_t) -> int64x2_t {
             vshlq_n_s64(a, BY)
+        }
+        for Wasm(a: v128) -> v128 {
+            i64x2_shl(a, BY as u32)
         }
     }
 }
@@ -424,13 +474,16 @@ impl_imm8_op! {
         for Neon(a: int64x2_t) -> int64x2_t {
             vreinterpretq_s64_u64(vshrq_n_u64(vreinterpretq_u64_s64(a), BY))
         }
+        for Wasm(a: v128) -> v128 {
+            u64x2_shr(a, BY as u32)
+        }
     }
 }
 
 impl_op! {
     fn cast_f64<i64> {
         for Avx2(a: __m256i) -> __m256d {
-            let arr = core::mem::transmute::<_, [i64; 4]>(a);
+            let arr = core::mem::transmute::<__m256i, [i64; 4]>(a);
             let result = [
                 arr[0] as f64,
                 arr[1] as f64,
@@ -440,7 +493,7 @@ impl_op! {
             core::mem::transmute::<_, __m256d>(result)
         }
         for Sse41(a: __m128i) -> __m128d {
-            let arr = core::mem::transmute::<_, [i64; 2]>(a);
+            let arr = core::mem::transmute::<__m128i, [i64; 2]>(a);
             let result = [
                 arr[0] as f64,
                 arr[1] as f64,
@@ -448,7 +501,7 @@ impl_op! {
             core::mem::transmute::<_, __m128d>(result)
         }
         for Sse2(a: __m128i) -> __m128d {
-            let arr = core::mem::transmute::<_, [i64; 2]>(a);
+            let arr = core::mem::transmute::<__m128i, [i64; 2]>(a);
             let result = [
                 arr[0] as f64,
                 arr[1] as f64,
@@ -460,6 +513,14 @@ impl_op! {
         }
         for Neon(a: int64x2_t) -> float64x2_t {
             vcvtq_f64_s64(a)
+        }
+        for Wasm(a: v128) -> v128 {
+            let arr = core::mem::transmute::<_, [i64; 2]>(a);
+            let result = [
+                arr[0] as f64,
+                arr[1] as f64,
+            ];
+            core::mem::transmute::<_, v128>(result)
         }
     }
 }
@@ -480,6 +541,9 @@ impl_op! {
         }
         for Neon(a: int64x2_t) -> float64x2_t {
             core::mem::transmute::<_, float64x2_t>(a)
+        }
+        for Wasm(a: v128) -> v128 {
+            a
         }
     }
 }
@@ -513,6 +577,11 @@ impl_op! {
             let c = vaddq_s64(a, b);
             vgetq_lane_s64(c, 0)
         }
+        for Wasm(val: v128) -> i64 {
+            let a = i64x2_extract_lane::<0>(val);
+            let b = i64x2_extract_lane::<1>(val);
+            a.wrapping_add(b)
+        }
     }
 }
 
@@ -532,6 +601,9 @@ impl_op! {
         }
         for Neon() -> int64x2_t {
             vdupq_n_s64(0)
+        }
+        for Wasm() -> v128 {
+            i64x2_splat(0)
         }
     }
 }
@@ -553,6 +625,9 @@ impl_op! {
         for Neon(val: i64) -> int64x2_t {
             vdupq_n_s64(val)
         }
+        for Wasm(val: i64) -> v128 {
+            i64x2_splat(val)
+        }
     }
 }
 
@@ -572,6 +647,9 @@ impl_op! {
         }
         for Neon(ptr: *const i64) -> int64x2_t {
             vld1q_s64(ptr)
+        }
+        for Wasm(ptr: *const i64) -> v128 {
+            *(ptr as *const v128)
         }
     }
 }
@@ -593,6 +671,9 @@ impl_op! {
         for Neon(ptr: *const i64) -> int64x2_t {
             vld1q_s64(ptr)
         }
+        for Wasm(ptr: *const i64) -> v128 {
+            *(ptr as *const v128)
+        }
     }
 }
 
@@ -613,6 +694,9 @@ impl_op! {
         for Neon(ptr: *mut i64, a: int64x2_t) {
             vst1q_s64(ptr, a)
         }
+        for Wasm(ptr: *mut i64, a: v128) {
+            *(ptr as *mut v128) = a;
+        }
     }
 }
 
@@ -632,6 +716,9 @@ impl_op! {
         }
         for Neon(ptr: *mut i64, a: int64x2_t) {
             vst1q_s64(ptr, a)
+        }
+        for Wasm(ptr: *mut i64, a: v128) {
+            *(ptr as *mut v128) = a;
         }
     }
 }
